@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: festa-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/festa}
+    username: ${SPRING_DATASOURCE_USERNAME:festa}
+    password: ${SPRING_DATASOURCE_PASSWORD:festa-local}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  flyway:
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  pattern:
+    level: "%5p [requestId=%X{requestId:-}]"
+
+festa:
+  mock-pg:
+    base-url: ${MOCK_PG_BASE_URL:http://localhost:8081}
+    connect-timeout: ${MOCK_PG_CONNECT_TIMEOUT:500ms}
+    read-timeout: ${MOCK_PG_READ_TIMEOUT:2s}
