@@ -2,10 +2,11 @@
 
 ## 현재 상태
 
-- 작업 브랜치: `plan/phase-0-foundation`
-- 구현은 단계 0 골격까지 존재한다.
-- `$grill-me`로 `IMPLEMENTATION_PLAN.md`의 정책과 장애 경합을 검토하는 중이다.
-- 2026-08-07까지 확정한 상세 정책은 `IMPLEMENTATION_PLAN.md`의 **2.1 설계 인터뷰에서 확정한 운영 정책**에 반영했다.
+- `main`에는 단계 0과 단계 1 구현이 병합되어 있다.
+- 단계 1은 이벤트·등급·재고 스키마와 seed, 개발용 인증, 이벤트 목록·상세 API와 최소 UI까지 완료했다.
+- 다음 구현 대상은 `docs/phases/phase-2.md`의 원자적 주문 생성과 재고 점유다.
+- `$grill-me`로 `docs/IMPLEMENTATION_PLAN.md`의 정책과 장애 경합을 검토했다.
+- 2026-08-07까지 확정한 상세 정책은 `docs/IMPLEMENTATION_PLAN.md`의 **2.1 설계 인터뷰에서 확정한 운영 정책**에 반영했다.
 
 ## 확정한 핵심 방향
 
@@ -39,10 +40,10 @@
 ## 다음 세션 시작 프롬프트
 
 ```text
-$grill-me
-IMPLEMENTATION_PLAN.md와 SESSION_HANDOFF.md를 모두 읽어줘.
-이전 세션에서 2.1의 정책까지 확정했어.
-이미 확정한 질문은 반복하지 말고, 아직 정의되지 않은 가장 위험한 설계 쟁점부터 한 번에 하나씩 질문해줘.
+AGENTS.md, docs/README.md, docs/IMPLEMENTATION_PLAN.md,
+docs/SESSION_HANDOFF.md, docs/phases/phase-2.md를 읽어줘.
+단계 2 브랜치를 만든 뒤 체크리스트 순서로 구현하고,
+완료한 항목·구현 내용·검증 결과를 phase 문서에 함께 반영해줘.
 ```
 
 ## 다음 세션에서 검토할 후보
