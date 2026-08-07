@@ -7,10 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.time.Instant;
@@ -50,8 +52,11 @@ class OrderConcurrencyIntegrationTest {
     @Autowired
     OrderService orderService;
 
+    @PersistenceContext
+    EntityManager entityManager;
+
     @Autowired
-    JdbcClient jdbcClient;
+    TransactionTemplate transactionTemplate;
 
     private UUID eventId;
     private UUID gradeId;
@@ -60,17 +65,19 @@ class OrderConcurrencyIntegrationTest {
     void setUp() {
         eventId = UUID.randomUUID();
         gradeId = UUID.randomUUID();
-        jdbcClient.sql("""
+        transactionTemplate.executeWithoutResult(status -> {
+        entityManager.createNativeQuery("""
                         INSERT INTO events (id, name, description, sale_starts_at, sale_ends_at, event_starts_at)
                         VALUES (:id, '동시성 테스트 이벤트', '테스트', CURRENT_TIMESTAMP - INTERVAL '1 minute',
                                 CURRENT_TIMESTAMP + INTERVAL '1 hour', CURRENT_TIMESTAMP + INTERVAL '2 hours')
-                        """).param("id", eventId).update();
-        jdbcClient.sql("""
+                        """).setParameter("id", eventId).executeUpdate();
+        entityManager.createNativeQuery("""
                         INSERT INTO ticket_grades (id, event_id, code, name, price, currency)
                         VALUES (:id, :eventId, 'GENERAL', '일반', 30000, 'KRW')
-                        """).param("id", gradeId).param("eventId", eventId).update();
-        jdbcClient.sql("INSERT INTO inventories (ticket_grade_id, total, available) VALUES (:id, 2, 2)")
-                .param("id", gradeId).update();
+                        """).setParameter("id", gradeId).setParameter("eventId", eventId).executeUpdate();
+        entityManager.createNativeQuery("INSERT INTO inventories (ticket_grade_id, total, available) VALUES (:id, 2, 2)")
+                .setParameter("id", gradeId).executeUpdate();
+        });
     }
 
     @Test
@@ -97,12 +104,12 @@ class OrderConcurrencyIntegrationTest {
             }
 
             assertThat(successCount).isEqualTo(2);
-            InventoryCounts inventory = jdbcClient.sql("""
+            Object[] row = (Object[]) entityManager.createNativeQuery("""
                             SELECT total, available, held, sold
                             FROM inventories WHERE ticket_grade_id = :gradeId
-                            """).param("gradeId", gradeId)
-                    .query((rs, rowNum) -> new InventoryCounts(rs.getInt("total"), rs.getInt("available"),
-                            rs.getInt("held"), rs.getInt("sold"))).single();
+                            """).setParameter("gradeId", gradeId).getSingleResult();
+            InventoryCounts inventory = new InventoryCounts(((Number) row[0]).intValue(), ((Number) row[1]).intValue(),
+                    ((Number) row[2]).intValue(), ((Number) row[3]).intValue());
             assertThat(inventory.available() + inventory.held() + inventory.sold()).isEqualTo(inventory.total());
             assertThat(inventory.held()).isEqualTo(2);
         } finally {
@@ -129,8 +136,9 @@ class OrderConcurrencyIntegrationTest {
         AuthenticatedUser user = createUsers(1).getFirst();
         OrderView created = orderService.createOrder(user, eventId, "GENERAL", "first-key");
 
-        jdbcClient.sql("UPDATE ticket_grades SET name = '변경된 일반', price = 99000 WHERE id = :gradeId")
-                .param("gradeId", gradeId).update();
+        transactionTemplate.executeWithoutResult(status -> entityManager
+                .createNativeQuery("UPDATE ticket_grades SET name = '변경된 일반', price = 99000 WHERE id = :gradeId")
+                .setParameter("gradeId", gradeId).executeUpdate());
         OrderView stored = orderService.getMyOrders(user).getFirst();
 
         assertThat(stored.id()).isEqualTo(created.id());
@@ -156,15 +164,17 @@ class OrderConcurrencyIntegrationTest {
     }
 
     private List<AuthenticatedUser> createUsers(int count) {
+        return transactionTemplate.execute(status -> {
         List<AuthenticatedUser> users = new ArrayList<>();
         for (int index = 0; index < count; index++) {
             UUID userId = UUID.randomUUID();
             String email = "concurrency-" + userId + "@festa.local";
-            jdbcClient.sql("INSERT INTO users (id, email, display_name, role) VALUES (:id, :email, :name, 'CUSTOMER')")
-                    .param("id", userId).param("email", email).param("name", "동시성 사용자 " + index).update();
+            entityManager.createNativeQuery("INSERT INTO users (id, email, display_name, role) VALUES (:id, :email, :name, 'CUSTOMER')")
+                    .setParameter("id", userId).setParameter("email", email).setParameter("name", "동시성 사용자 " + index).executeUpdate();
             users.add(new AuthenticatedUser(userId, email, "동시성 사용자 " + index, UserRole.CUSTOMER));
         }
         return users;
+        });
     }
 
     private record InventoryCounts(int total, int available, int held, int sold) {
