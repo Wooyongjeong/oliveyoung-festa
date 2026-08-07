@@ -3,6 +3,7 @@ package com.oliveyoung.festa.api;
 import com.oliveyoung.festa.auth.AccessDeniedException;
 import com.oliveyoung.festa.auth.AuthenticationRequiredException;
 import com.oliveyoung.festa.catalog.EventNotFoundException;
+import com.oliveyoung.festa.order.OrderException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,6 +30,11 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> handleEventNotFound(EventNotFoundException exception, HttpServletRequest request) {
         return error(ApiStatus.EVENT_NOT_FOUND, exception.getMessage(), request,
                 Map.of("eventId", exception.eventId()));
+    }
+
+    @ExceptionHandler(OrderException.class)
+    ResponseEntity<ApiError> handleOrder(OrderException exception, HttpServletRequest request) {
+        return error(exception.status(), exception.getMessage(), request, Map.of());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
