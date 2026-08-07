@@ -1,6 +1,7 @@
 package com.oliveyoung.festa.catalog;
 
-import org.springframework.jdbc.core.simple.JdbcClient;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
@@ -13,79 +14,38 @@ import java.util.UUID;
 @Repository
 public class EventRepository {
 
-    private final JdbcClient jdbcClient;
-
-    public EventRepository(JdbcClient jdbcClient) {
-        this.jdbcClient = jdbcClient;
-    }
+    @PersistenceContext private EntityManager entityManager;
 
     public List<EventSummary> findAll() {
-        return jdbcClient.sql("""
-                        SELECT id, name, sale_starts_at, sale_ends_at, event_starts_at, CURRENT_TIMESTAMP AS database_now
-                        FROM events
-                        ORDER BY event_starts_at, id
-                        """)
-                .query(this::mapSummary)
-                .list();
+        return entityManager.createQuery("SELECT e FROM EventEntity e ORDER BY e.eventStartsAt, e.id", EventEntity.class)
+                .getResultList().stream().map(this::toSummary).toList();
     }
 
     public Optional<EventDetail> findById(UUID eventId) {
-        Optional<EventRow> event = jdbcClient.sql("""
-                        SELECT id, name, description, sale_starts_at, sale_ends_at, event_starts_at,
-                               CURRENT_TIMESTAMP AS database_now
-                        FROM events
-                        WHERE id = :eventId
-                        """)
-                .param("eventId", eventId)
-                .query((rs, rowNum) -> new EventRow(
-                        rs.getObject("id", UUID.class),
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getObject("sale_starts_at", java.time.OffsetDateTime.class).toInstant(),
-                        rs.getObject("sale_ends_at", java.time.OffsetDateTime.class).toInstant(),
-                        rs.getObject("event_starts_at", java.time.OffsetDateTime.class).toInstant(),
-                        rs.getObject("database_now", java.time.OffsetDateTime.class).toInstant()))
-                .optional();
-
-        return event.map(row -> new EventDetail(
-                row.id(), row.name(), row.description(), row.saleStartsAt(), row.saleEndsAt(), row.eventStartsAt(),
-                EventSaleStatus.at(row.databaseNow(), row.saleStartsAt(), row.saleEndsAt()), findGrades(row.id())));
+        EventEntity event = entityManager.find(EventEntity.class, eventId);
+        if (event == null) return Optional.empty();
+        Instant now = databaseNow();
+        return Optional.of(new EventDetail(event.getId(), event.getName(), event.getDescription(), event.getSaleStartsAt(),
+                event.getSaleEndsAt(), event.getEventStartsAt(), EventSaleStatus.at(now, event.getSaleStartsAt(), event.getSaleEndsAt()),
+                findGrades(eventId)));
     }
 
     private List<EventDetail.TicketGrade> findGrades(UUID eventId) {
-        return jdbcClient.sql("""
-                        SELECT tg.id, tg.code, tg.name, tg.price, tg.currency, i.total, i.available
-                        FROM ticket_grades tg
-                        JOIN inventories i ON i.ticket_grade_id = tg.id
-                        WHERE tg.event_id = :eventId
-                        ORDER BY tg.price, tg.code
-                        """)
-                .param("eventId", eventId)
-                .query((rs, rowNum) -> new EventDetail.TicketGrade(
-                        rs.getObject("id", UUID.class), rs.getString("code"), rs.getString("name"),
-                        rs.getBigDecimal("price"), rs.getString("currency"), rs.getInt("total"),
-                        rs.getInt("available")))
-                .list();
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = entityManager.createNativeQuery("""
+                SELECT tg.id, tg.code, tg.name, tg.price, tg.currency, i.total, i.available
+                FROM ticket_grades tg JOIN inventories i ON i.ticket_grade_id = tg.id
+                WHERE tg.event_id = :eventId ORDER BY tg.price, tg.code
+                """).setParameter("eventId", eventId).getResultList();
+        return rows.stream().map(row -> new EventDetail.TicketGrade((UUID) row[0], (String) row[1], (String) row[2],
+                (java.math.BigDecimal) row[3], (String) row[4], ((Number) row[5]).intValue(), ((Number) row[6]).intValue())).toList();
     }
 
-    private EventSummary mapSummary(ResultSet rs, int rowNum) throws SQLException {
-        Instant startsAt = rs.getObject("sale_starts_at", java.time.OffsetDateTime.class).toInstant();
-        Instant endsAt = rs.getObject("sale_ends_at", java.time.OffsetDateTime.class).toInstant();
-        Instant now = rs.getObject("database_now", java.time.OffsetDateTime.class).toInstant();
-        return new EventSummary(
-                rs.getObject("id", UUID.class), rs.getString("name"), startsAt, endsAt,
-                rs.getObject("event_starts_at", java.time.OffsetDateTime.class).toInstant(),
-                EventSaleStatus.at(now, startsAt, endsAt));
+    private EventSummary toSummary(EventEntity event) {
+        Instant now = databaseNow();
+        return new EventSummary(event.getId(), event.getName(), event.getSaleStartsAt(), event.getSaleEndsAt(),
+                event.getEventStartsAt(), EventSaleStatus.at(now, event.getSaleStartsAt(), event.getSaleEndsAt()));
     }
 
-    private record EventRow(
-            UUID id,
-            String name,
-            String description,
-            Instant saleStartsAt,
-            Instant saleEndsAt,
-            Instant eventStartsAt,
-            Instant databaseNow
-    ) {
-    }
+    private Instant databaseNow() { return ((java.time.OffsetDateTime) entityManager.createNativeQuery("SELECT CURRENT_TIMESTAMP").getSingleResult()).toInstant(); }
 }

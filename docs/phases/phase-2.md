@@ -28,6 +28,7 @@ PostgreSQL 트랜잭션과 조건부 갱신으로 초과 판매와 사용자 중
 - `POST /api/orders`는 `Idempotency-Key`를 필수로 받고 HTTP 201/`ORDER_001`을 반환한다. 동일 사용자·키·본문 요청은 기존 주문을 반환하고, 다른 본문은 `IDEMPOTENCY_409`으로 거절한다.
 - `GET /api/me/orders`는 HTTP 200/`ORDER_002`로 현재 고객의 주문 스냅샷과 점유 만료 시각을 반환한다.
 - `OrderStatus`에 허용 상태 전이를 명시했다. 실제 결제·만료 전이는 이후 단계에서 이 규칙을 사용한다.
+- Spring Data JPA로 전환했다. `UserRepository`는 `JpaRepository`를 사용하고, 카탈로그·주문 저장소는 JPA `EntityManager`를 사용한다. 재고·구매 권리 조건부 갱신은 PostgreSQL 원자성을 위해 native query로 유지한다. Querydsl은 현재 단순 조회에 필요하지 않아 추가하지 않았다.
 
 ## 검증 결과
 
@@ -37,6 +38,7 @@ PostgreSQL 트랜잭션과 조건부 갱신으로 초과 판매와 사용자 중
 - 주문 생성 뒤 등급 가격·이름을 변경해도 저장된 주문 스냅샷이 유지되는지 검증
 - 주문 상태 허용 전이 단위 테스트 및 `@LoginUser` 기반 주문 API HTTP 201 envelope 테스트 통과
 - `docker compose up --build -d backend` 후 실제 PostgreSQL V3 migration, `ORDER_001` 주문 생성과 `ORDER_002` 내 주문 조회 확인
+- Spring Data JPA 전환 후 `./gradlew :backend:test` 통과
 
 ## 남은 사항
 

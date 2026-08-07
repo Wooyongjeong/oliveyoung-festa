@@ -5,6 +5,7 @@
 - `main`에는 단계 0과 단계 1 구현이 병합되어 있다.
 - 단계 1은 이벤트·등급·재고 스키마와 seed, 개발용 인증, 이벤트 목록·상세 API와 최소 UI까지 완료했다.
 - 단계 2는 `@LoginUser` resolver, 주문·점유·구매 권리·이력 스키마, 원자적 재고 점유와 멱등 주문 API까지 완료했다.
+- 영속성은 Spring Data JPA로 전환했으며, 조건부 재고·구매 권리 갱신만 native query로 유지한다. Querydsl은 아직 필요하지 않다.
 - 다음 구현 대상은 `docs/phases/phase-3.md`의 Mock 결제, 실패, 재시도와 reconciliation이다.
 - `$grill-me`로 `docs/IMPLEMENTATION_PLAN.md`의 정책과 장애 경합을 검토했다.
 - 2026-08-07까지 확정한 상세 정책은 `docs/IMPLEMENTATION_PLAN.md`의 **2.1 설계 인터뷰에서 확정한 운영 정책**에 반영했다.
