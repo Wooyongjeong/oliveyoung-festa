@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: festa-mock-pg
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+server:
+  port: ${SERVER_PORT:8081}
