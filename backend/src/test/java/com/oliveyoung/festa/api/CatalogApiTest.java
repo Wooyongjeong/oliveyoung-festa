@@ -1,6 +1,7 @@
 package com.oliveyoung.festa.api;
 
 import com.oliveyoung.festa.auth.AuthController;
+import com.oliveyoung.festa.auth.AuthService;
 import com.oliveyoung.festa.auth.AuthenticatedUser;
 import com.oliveyoung.festa.auth.CurrentUser;
 import com.oliveyoung.festa.auth.DevAuthenticationFilter;
@@ -9,6 +10,7 @@ import com.oliveyoung.festa.auth.UserRole;
 import com.oliveyoung.festa.catalog.EventController;
 import com.oliveyoung.festa.catalog.EventRepository;
 import com.oliveyoung.festa.catalog.EventSaleStatus;
+import com.oliveyoung.festa.catalog.EventService;
 import com.oliveyoung.festa.catalog.EventSummary;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {AuthController.class, EventController.class})
-@Import({CurrentUser.class, DevAuthenticationFilter.class})
+@Import({AuthService.class, EventService.class, CurrentUser.class, DevAuthenticationFilter.class})
 class CatalogApiTest {
 
     private static final UUID USER_ID = UUID.fromString("10000000-0000-0000-0000-000000000001");
@@ -54,9 +56,11 @@ class CatalogApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"customer@festa.local\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value(USER_ID.toString()))
-                .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.user.role").value("CUSTOMER"));
+                .andExpect(jsonPath("$.statusCode").value("AUTH_001"))
+                .andExpect(jsonPath("$.statusMessage").value("로그인 성공"))
+                .andExpect(jsonPath("$.body.accessToken").value(USER_ID.toString()))
+                .andExpect(jsonPath("$.body.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.body.user.role").value("CUSTOMER"));
     }
 
     @Test
@@ -64,7 +68,7 @@ class CatalogApiTest {
         mockMvc.perform(get("/api/events"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().exists("X-Request-Id"))
-                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
+                .andExpect(jsonPath("$.code").value("AUTH_401"))
                 .andExpect(jsonPath("$.requestId").isNotEmpty());
     }
 
@@ -82,8 +86,10 @@ class CatalogApiTest {
         mockMvc.perform(get("/api/events")
                         .header("Authorization", "Bearer " + USER_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("올리브영 페스타 2026"))
-                .andExpect(jsonPath("$[0].status").value("ON_SALE"));
+                .andExpect(jsonPath("$.statusCode").value("EVENT_001"))
+                .andExpect(jsonPath("$.statusMessage").value("이벤트 목록 조회 성공"))
+                .andExpect(jsonPath("$.body[0].name").value("올리브영 페스타 2026"))
+                .andExpect(jsonPath("$.body[0].status").value("ON_SALE"));
     }
 
     @Test
@@ -94,7 +100,7 @@ class CatalogApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"unknown@festa.local\"}"))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+                .andExpect(jsonPath("$.code").value("AUTH_403"));
     }
 
     private AuthenticatedUser customer() {

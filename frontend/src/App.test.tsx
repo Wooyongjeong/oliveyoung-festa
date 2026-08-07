@@ -7,25 +7,25 @@ describe('App', () => {
 
   it('logs in and shows event inventory', async () => {
     vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(jsonResponse({
+      .mockResolvedValueOnce(successResponse('AUTH_001', '로그인 성공', {
         accessToken: 'user-id',
         tokenType: 'Bearer',
         user: { displayName: '데모 고객', role: 'CUSTOMER' },
       }))
-      .mockResolvedValueOnce(jsonResponse([{
-        id: 'event-id',
-        name: '올리브영 페스타 2026',
-        eventStartsAt: '2026-09-07T01:00:00Z',
-        status: 'ON_SALE',
-      }]))
-      .mockResolvedValueOnce(jsonResponse({
-        id: 'event-id',
-        name: '올리브영 페스타 2026',
-        description: '뷰티와 웰니스 브랜드를 만나는 페스타입니다.',
-        eventStartsAt: '2026-09-07T01:00:00Z',
-        status: 'ON_SALE',
-        grades: [{ id: 'grade-id', code: 'GENERAL', name: '일반', price: 30000, currency: 'KRW', available: 1 }],
-      }))
+      .mockResolvedValueOnce(successResponse('EVENT_001', '이벤트 목록 조회 성공', [{
+          id: 'event-id',
+          name: '올리브영 페스타 2026',
+          eventStartsAt: '2026-09-07T01:00:00Z',
+          status: 'ON_SALE',
+        }]))
+      .mockResolvedValueOnce(successResponse('EVENT_002', '이벤트 상세 조회 성공', {
+          id: 'event-id',
+          name: '올리브영 페스타 2026',
+          description: '뷰티와 웰니스 브랜드를 만나는 페스타입니다.',
+          eventStartsAt: '2026-09-07T01:00:00Z',
+          status: 'ON_SALE',
+          grades: [{ id: 'grade-id', code: 'GENERAL', name: '일반', price: 30000, currency: 'KRW', available: 1 }],
+        }))
 
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
@@ -54,4 +54,8 @@ describe('App', () => {
 
 function jsonResponse(body: unknown, ok = true): Response {
   return { ok, json: async () => body } as Response
+}
+
+function successResponse(statusCode: string, statusMessage: string, body: unknown): Response {
+  return jsonResponse({ statusCode, statusMessage, body })
 }

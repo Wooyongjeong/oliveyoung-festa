@@ -11,6 +11,12 @@ type LoginResponse = {
   user: User
 }
 
+type ApiResponse<T> = {
+  statusCode: string
+  statusMessage: string
+  body: T
+}
+
 type EventSummary = {
   id: string
   name: string
@@ -134,9 +140,9 @@ async function request<T>(url: string, init: RequestInit = {}, accessToken?: str
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   })
-  const body = await response.json()
+  const responseBody = await response.json()
   if (!response.ok) {
-    throw new Error(body.message ?? '요청을 처리하지 못했습니다.')
+    throw new Error(responseBody.message ?? '요청을 처리하지 못했습니다.')
   }
-  return body as T
+  return (responseBody as ApiResponse<T>).body
 }

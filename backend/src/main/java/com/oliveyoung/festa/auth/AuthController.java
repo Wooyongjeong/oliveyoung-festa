@@ -1,8 +1,11 @@
 package com.oliveyoung.festa.auth;
 
+import com.oliveyoung.festa.api.ApiResponse;
+import com.oliveyoung.festa.api.ApiStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,24 +18,20 @@ import java.util.UUID;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final CurrentUser currentUser;
+    private final AuthService authService;
 
-    public AuthController(UserRepository userRepository, CurrentUser currentUser) {
-        this.userRepository = userRepository;
-        this.currentUser = currentUser;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/dev-login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        AuthenticatedUser user = userRepository.findActiveByEmail(request.email())
-                .orElseThrow(() -> new AccessDeniedException("등록된 활성 데모 사용자가 아닙니다."));
-        return LoginResponse.from(user);
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        return ApiResponse.of(ApiStatus.AUTH_LOGIN_SUCCESS, LoginResponse.from(authService.login(request.email())));
     }
 
     @GetMapping("/me")
-    public UserResponse me() {
-        return UserResponse.from(currentUser.requireAuthenticated());
+    public ResponseEntity<ApiResponse<UserResponse>> me() {
+        return ApiResponse.of(ApiStatus.AUTH_ME_SUCCESS, UserResponse.from(authService.getCurrentUser()));
     }
 
     public record LoginRequest(@NotBlank @Email String email) {
