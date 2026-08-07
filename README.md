@@ -31,4 +31,25 @@ docker compose up --build
 cd frontend && npm ci && npm test
 ```
 
-단계 0은 애플리케이션 골격과 인프라 연결까지만 포함한다. 이벤트·재고 스키마와 실제 사용자 기능은 다음 단계에서 추가한다.
+## 단계 1 데모 흐름
+
+프런트에서 `customer@festa.local`로 로그인하면 판매 이벤트와 GENERAL/VIP 가격·잔여 수량을 확인할 수 있다. 개발용 사용자는 다음과 같다.
+
+| 이메일 | 역할 |
+|---|---|
+| `customer@festa.local` | `CUSTOMER` |
+| `operator@festa.local` | `OPERATOR` |
+| `admin@festa.local` | `ADMIN` |
+
+개발 로그인 API는 사용자 UUID를 Bearer 토큰으로 반환한다. 비밀번호나 토큰 서명이 없는 로컬 개발·시연 전용 방식이며 운영 환경에 사용하지 않는다.
+
+```bash
+curl -s http://localhost:8080/api/auth/dev-login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"customer@festa.local"}'
+
+curl -s http://localhost:8080/api/events \
+  -H 'Authorization: Bearer 10000000-0000-0000-0000-000000000001'
+```
+
+Flyway seed는 판매 중인 데모 이벤트 1개와 GENERAL/VIP 각 1매를 생성한다. 판매 상태 판정에는 PostgreSQL `CURRENT_TIMESTAMP`를 사용한다.

@@ -1,7 +1,10 @@
 package com.oliveyoung.festa;
 
+import com.oliveyoung.festa.auth.UserRepository;
+import com.oliveyoung.festa.catalog.EventRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest(properties = {
         "spring.autoconfigure.exclude="
@@ -11,6 +14,12 @@ import org.springframework.boot.test.context.SpringBootTest;
                 + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
 })
 class FestaApplicationTest {
+
+    @MockitoBean
+    UserRepository userRepository;
+
+    @MockitoBean
+    EventRepository eventRepository;
 
     @Test
     void contextLoads() {
