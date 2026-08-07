@@ -30,8 +30,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> me() {
-        return ApiResponse.of(ApiStatus.AUTH_ME_SUCCESS, UserResponse.from(authService.getCurrentUser()));
+    public ResponseEntity<ApiResponse<UserResponse>> me(@LoginUser AuthenticatedUser user) {
+        return ApiResponse.of(ApiStatus.AUTH_ME_SUCCESS, UserResponse.from(user));
     }
 
     public record LoginRequest(@NotBlank @Email String email) {

@@ -6,11 +6,8 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final CurrentUser currentUser;
-
-    public AuthService(UserRepository userRepository, CurrentUser currentUser) {
+    public AuthService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.currentUser = currentUser;
     }
 
     public AuthenticatedUser login(String email) {
@@ -18,7 +15,4 @@ public class AuthService {
                 .orElseThrow(() -> new AccessDeniedException("등록된 활성 데모 사용자가 아닙니다."));
     }
 
-    public AuthenticatedUser getCurrentUser() {
-        return currentUser.requireAuthenticated();
-    }
 }

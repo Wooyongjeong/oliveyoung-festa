@@ -3,8 +3,8 @@ package com.oliveyoung.festa.api;
 import com.oliveyoung.festa.auth.AuthController;
 import com.oliveyoung.festa.auth.AuthService;
 import com.oliveyoung.festa.auth.AuthenticatedUser;
-import com.oliveyoung.festa.auth.CurrentUser;
 import com.oliveyoung.festa.auth.DevAuthenticationFilter;
+import com.oliveyoung.festa.auth.LoginUserArgumentResolver;
 import com.oliveyoung.festa.auth.UserRepository;
 import com.oliveyoung.festa.auth.UserRole;
 import com.oliveyoung.festa.catalog.EventController;
@@ -33,7 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {AuthController.class, EventController.class})
-@Import({AuthService.class, EventService.class, CurrentUser.class, DevAuthenticationFilter.class})
+@Import({AuthService.class, EventService.class, LoginUserArgumentResolver.class, WebMvcConfig.class,
+        DevAuthenticationFilter.class})
 class CatalogApiTest {
 
     private static final UUID USER_ID = UUID.fromString("10000000-0000-0000-0000-000000000001");

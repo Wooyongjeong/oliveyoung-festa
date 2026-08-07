@@ -2,6 +2,8 @@ package com.oliveyoung.festa.catalog;
 
 import com.oliveyoung.festa.api.ApiResponse;
 import com.oliveyoung.festa.api.ApiStatus;
+import com.oliveyoung.festa.auth.AuthenticatedUser;
+import com.oliveyoung.festa.auth.LoginUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,12 +24,13 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EventSummary>>> list() {
+    public ResponseEntity<ApiResponse<List<EventSummary>>> list(@LoginUser AuthenticatedUser user) {
         return ApiResponse.of(ApiStatus.EVENT_LIST_SUCCESS, eventService.getEvents());
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<ApiResponse<EventDetail>> detail(@PathVariable UUID eventId) {
+    public ResponseEntity<ApiResponse<EventDetail>> detail(@PathVariable UUID eventId,
+                                                            @LoginUser AuthenticatedUser user) {
         return ApiResponse.of(ApiStatus.EVENT_DETAIL_SUCCESS, eventService.getEvent(eventId));
     }
 }

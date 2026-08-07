@@ -2,6 +2,7 @@ package com.oliveyoung.festa;
 
 import com.oliveyoung.festa.auth.UserRepository;
 import com.oliveyoung.festa.catalog.EventRepository;
+import com.oliveyoung.festa.order.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -20,6 +21,9 @@ class FestaApplicationTest {
 
     @MockitoBean
     EventRepository eventRepository;
+
+    @MockitoBean
+    OrderRepository orderRepository;
 
     @Test
     void contextLoads() {
