@@ -1,6 +1,13 @@
 spring:
   application:
     name: festa-mock-pg
+  datasource:
+    url: ${MOCK_PG_DATABASE_URL:jdbc:h2:file:/tmp/festa-mock-pg;AUTO_SERVER=TRUE}
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
 
 management:
   endpoints:

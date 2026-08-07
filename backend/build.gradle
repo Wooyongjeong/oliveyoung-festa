@@ -5,6 +5,8 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation platform('org.testcontainers:testcontainers-bom:1.21.3')
