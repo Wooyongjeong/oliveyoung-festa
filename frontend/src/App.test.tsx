@@ -1,9 +1,12 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
 describe('App', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    cleanup()
+    vi.restoreAllMocks()
+  })
 
   it('logs in and shows event inventory', async () => {
     vi.spyOn(globalThis, 'fetch')
@@ -49,6 +52,34 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('등록된 활성 데모 사용자가 아닙니다.')
+  })
+
+  it('creates and pays for an order', async () => {
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('00000000-0000-4000-8000-000000000001')
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(successResponse('AUTH_001', '로그인 성공', {
+        accessToken: 'user-id', tokenType: 'Bearer', user: { displayName: '데모 고객', role: 'CUSTOMER' },
+      }))
+      .mockResolvedValueOnce(successResponse('EVENT_001', '조회 성공', [{
+        id: 'event-id', name: '페스타', eventStartsAt: '2026-09-07T01:00:00Z', status: 'ON_SALE',
+      }]))
+      .mockResolvedValueOnce(successResponse('EVENT_002', '조회 성공', {
+        id: 'event-id', name: '페스타', description: '테스트', eventStartsAt: '2026-09-07T01:00:00Z', status: 'ON_SALE',
+        grades: [{ id: 'grade-id', code: 'GENERAL', name: '일반', price: 30000, currency: 'KRW', available: 1 }],
+      }))
+      .mockResolvedValueOnce(successResponse('ORDER_001', '주문 생성 성공', {
+        id: 'order-id', eventName: '페스타', gradeName: '일반', unitPrice: 30000, status: 'HELD',
+      }))
+      .mockResolvedValueOnce(successResponse('PAYMENT_001', '결제 처리 성공', {
+        orderId: 'order-id', status: 'APPROVED',
+      }))
+
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(await screen.findByRole('button', { name: '주문하기' }))
+    fireEvent.click(await screen.findByRole('button', { name: '결제하기' }))
+
+    expect(await screen.findByText('30,000원 · PAID')).toBeInTheDocument()
   })
 })
 

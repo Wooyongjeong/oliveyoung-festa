@@ -38,6 +38,19 @@ type EventDetail = EventSummary & {
   grades: TicketGrade[]
 }
 
+type Order = {
+  id: string
+  eventName: string
+  gradeName: string
+  unitPrice: number
+  status: string
+}
+
+type Payment = {
+  orderId: string
+  status: 'PROCESSING' | 'APPROVED' | 'DECLINED' | 'UNKNOWN' | 'REVIEW_REQUIRED'
+}
+
 const statusLabels = {
   UPCOMING: '판매 예정',
   ON_SALE: '판매 중',
@@ -47,7 +60,9 @@ const statusLabels = {
 export function App() {
   const [email, setEmail] = useState('customer@festa.local')
   const [user, setUser] = useState<User | null>(null)
+  const [accessToken, setAccessToken] = useState('')
   const [events, setEvents] = useState<EventDetail[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -67,9 +82,59 @@ export function App() {
         eventSummaries.map((summary) => request<EventDetail>(`/api/events/${summary.id}`, {}, loginResponse.accessToken)),
       )
       setUser(loginResponse.user)
+      setAccessToken(loginResponse.accessToken)
       setEvents(eventDetails)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '요청을 처리하지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function purchase(eventId: string, ticketGradeCode: string) {
+    setLoading(true)
+    setError('')
+    try {
+      const order = await request<Order>('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+        body: JSON.stringify({ eventId, ticketGradeCode }),
+      }, accessToken)
+      setOrders((current) => [order, ...current])
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '주문을 만들지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function pay(order: Order) {
+    setLoading(true)
+    setError('')
+    try {
+      const payment = await request<Payment>(`/api/orders/${order.id}/payments`, {
+        method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() },
+      }, accessToken)
+      setOrders((current) => current.map((item) => item.id === order.id
+        ? { ...item, status: payment.status === 'APPROVED' ? 'PAID' : payment.status === 'DECLINED' ? 'HELD' : payment.status }
+        : item))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '결제를 처리하지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function reconcile(order: Order) {
+    setLoading(true)
+    setError('')
+    try {
+      const payment = await request<Payment>(`/api/orders/${order.id}/payments/reconcile`, { method: 'POST' }, accessToken)
+      setOrders((current) => current.map((item) => item.id === order.id
+        ? { ...item, status: payment.status === 'APPROVED' ? 'PAID' : payment.status }
+        : item))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '결제 상태를 확인하지 못했습니다.')
     } finally {
       setLoading(false)
     }
@@ -122,12 +187,25 @@ export function App() {
                   <strong>{grade.name}</strong>
                   <span>{grade.price.toLocaleString('ko-KR')}원</span>
                   <span className="available">잔여 {grade.available}매</span>
+                  <button type="button" disabled={loading || grade.available < 1}
+                    onClick={() => purchase(event.id, grade.code)}>주문하기</button>
                 </div>
               ))}
             </div>
           </article>
         ))}
       </section>
+      {orders.length > 0 && <section aria-label="내 주문">
+        <h2>내 주문</h2>
+        {orders.map((order) => <article key={order.id}>
+          <strong>{order.eventName} · {order.gradeName}</strong>
+          <p>{order.unitPrice.toLocaleString('ko-KR')}원 · {order.status}</p>
+          {order.status === 'HELD' && <button type="button" disabled={loading} onClick={() => pay(order)}>결제하기</button>}
+          {(order.status === 'UNKNOWN' || order.status === 'REVIEW_REQUIRED') &&
+            <button type="button" disabled={loading} onClick={() => reconcile(order)}>결제 확인</button>}
+        </article>)}
+      </section>}
+      {error && <p className="error" role="alert">{error}</p>}
     </main>
   )
 }

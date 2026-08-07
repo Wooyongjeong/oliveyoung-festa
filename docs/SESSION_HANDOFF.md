@@ -6,7 +6,8 @@
 - 단계 1은 이벤트·등급·재고 스키마와 seed, 개발용 인증, 이벤트 목록·상세 API와 최소 UI까지 완료했다.
 - 단계 2는 `@LoginUser` resolver, 주문·점유·구매 권리·이력 스키마, 원자적 재고 점유와 멱등 주문 API까지 완료했다.
 - 영속성은 Spring Data JPA로 전환했으며, 조건부 재고·구매 권리 갱신만 native query로 유지한다. Querydsl은 아직 필요하지 않다.
-- 다음 구현 대상은 `docs/phases/phase-3.md`의 Mock 결제, 실패, 재시도와 reconciliation이다.
+- 단계 3은 Mock PG 승인·조회·환불, 결제 성공·실패·재시도·조정과 최소 UI까지 완료했다.
+- 다음 구현 대상은 `docs/phases/phase-4.md`의 점유 만료와 다중 인스턴스 경합이다.
 - `$grill-me`로 `docs/IMPLEMENTATION_PLAN.md`의 정책과 장애 경합을 검토했다.
 - 2026-08-07까지 확정한 상세 정책은 `docs/IMPLEMENTATION_PLAN.md`의 **2.1 설계 인터뷰에서 확정한 운영 정책**에 반영했다.
 
@@ -43,8 +44,8 @@
 
 ```text
 AGENTS.md, docs/README.md, docs/IMPLEMENTATION_PLAN.md,
-docs/SESSION_HANDOFF.md, docs/phases/phase-3.md를 읽어줘.
-단계 3 브랜치를 만든 뒤 체크리스트 순서로 구현하고,
+docs/SESSION_HANDOFF.md, docs/phases/phase-4.md를 읽어줘.
+단계 4 브랜치를 만든 뒤 체크리스트 순서로 구현하고,
 완료한 항목·구현 내용·검증 결과를 phase 문서에 함께 반영해줘.
 ```
 
