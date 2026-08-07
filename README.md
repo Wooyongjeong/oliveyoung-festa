@@ -2,9 +2,11 @@
 
 선착순 페스타 티켓의 대기열, 원자적 재고 점유, Mock 결제, 비동기 티켓 발급을 구현하는 풀스택 프로젝트다.
 
-- [전체 아키텍처](./ARCHITECTURE.md)
-- [구현 계획](./IMPLEMENTATION_PLAN.md)
-- [요구사항](./PROJECT_SPEC.md)
+- [문서 인덱스](./docs/README.md)
+- [전체 아키텍처](./docs/ARCHITECTURE.md)
+- [구현 계획](./docs/IMPLEMENTATION_PLAN.md)
+- [요구사항](./docs/PROJECT_SPEC.md)
+- [단계별 진행 현황](./docs/phases/README.md)
 
 ## 요구 환경
 
