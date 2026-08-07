@@ -6,6 +6,7 @@
 - [구현 계획](./IMPLEMENTATION_PLAN.md)
 - [아키텍처](./ARCHITECTURE.md)
 - [세션 인계](./SESSION_HANDOFF.md)
+- [API 응답 규약](./API_CONVENTIONS.md)
 
 ## 단계별 진행
 

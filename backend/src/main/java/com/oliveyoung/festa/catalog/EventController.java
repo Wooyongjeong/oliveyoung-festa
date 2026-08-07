@@ -1,6 +1,8 @@
 package com.oliveyoung.festa.catalog;
 
-import com.oliveyoung.festa.auth.CurrentUser;
+import com.oliveyoung.festa.api.ApiResponse;
+import com.oliveyoung.festa.api.ApiStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,23 +15,19 @@ import java.util.UUID;
 @RequestMapping("/api/events")
 public class EventController {
 
-    private final EventRepository eventRepository;
-    private final CurrentUser currentUser;
+    private final EventService eventService;
 
-    public EventController(EventRepository eventRepository, CurrentUser currentUser) {
-        this.eventRepository = eventRepository;
-        this.currentUser = currentUser;
+    public EventController(EventService eventService) {
+        this.eventService = eventService;
     }
 
     @GetMapping
-    public List<EventSummary> list() {
-        currentUser.requireAuthenticated();
-        return eventRepository.findAll();
+    public ResponseEntity<ApiResponse<List<EventSummary>>> list() {
+        return ApiResponse.of(ApiStatus.EVENT_LIST_SUCCESS, eventService.getEvents());
     }
 
     @GetMapping("/{eventId}")
-    public EventDetail detail(@PathVariable UUID eventId) {
-        currentUser.requireAuthenticated();
-        return eventRepository.findById(eventId).orElseThrow(() -> new EventNotFoundException(eventId));
+    public ResponseEntity<ApiResponse<EventDetail>> detail(@PathVariable UUID eventId) {
+        return ApiResponse.of(ApiStatus.EVENT_DETAIL_SUCCESS, eventService.getEvent(eventId));
     }
 }
